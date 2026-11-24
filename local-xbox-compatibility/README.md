@@ -248,16 +248,34 @@ VIctory is GPL-3.0-or-later; XCL is GPL-2.0-only. Keep their source trees separa
 
 Before the first retail-game test, Windows automatic pagefile management was disabled and a fixed 24,576 MB pagefile was configured on C: through the Virtual Memory UI. After restart, the user verified `C:\pagefile.sys` at 24,576 MB and Task Manager reported a 39.7 GB commit limit (6 GB committed immediately after restart; 9 GB after starting Firefox). This increases commit capacity but does not add physical RAM. See [the exact change and rollback instructions](system-changes/2026-11-24-pagefile-xcl-preflight.md).
 
+
+## XCL — 120-second retail-game run with 512 MB coherent window (24 November 2026)
+
+The user completed a 120-second run on the verified upstream build `beaa245`, using `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`. The log confirms that `XCL_RUN_SECONDS=120` ended the process intentionally. The report records `crash: null` and exit code `0`. The user observed the Rockstar logo and a narration screen before the timer ended.
+
+Key results: 757 PresentX calls; 235 translated pipelines; no fallback/failed pipeline counters; no DXIL compilation failures; 40 mesh-pipeline translation refusals (MS container in AS slot); 90 Opus/XAPU packets decoded with zero decoder errors; 126 DirectStorage BCPack requests refused (BC1 6, BC5 100, BC7 20).
+
+The coherent UMA window remained at 512 MB, with `uma_used_kb=119552` (about 116.75 MB). It was not close to full. The activity trace's process-private commit rose to a maximum of about 16,074 MB and then stayed around 16,029–16,074 MB through the final minute. DXGI reported local video-memory `CurrentUsage` peaking around 6,654 MB and non-local around 1,359 MB. XCL's activity log does not record the DXGI budget, CPU load, total system physical-memory availability, GPU temperature, CPU temperature, or clocks, so it cannot by itself establish thermal headroom or exact physical residency.
+
+FPS: XCL logged 600 frames presented and 7.8 FPS over the last 300 at about 97.7 seconds; the total run recorded 757 presentations over 120 seconds (about 6.3 average across startup and loading). The user's observed on-screen rate was approximately 9.5 FPS. Keep these as different measurement windows rather than treating them as contradictory.
+
+Interpretation: forcing 512 MB successfully avoided the previous 4,095 MB coherent-window saturation, and the title survived the full timed interval. This is the strongest local progress so far, but not proof of gameplay. The remaining mesh pipeline refusals, DirectStorage BC pack failures, 32-lane wave split on the RTX 3050 Ti, and memory pressure likely contribute to the low frame rate / incomplete rendering.
+
+For the local video-memory numbers, XCL calls `IDXGIAdapter3::QueryVideoMemoryInfo` and logs `CurrentUsage` for local and non-local segments. Microsoft defines this as the application's current video-memory usage; the same structure's `Budget` field gives the OS-provided budget, and exceeding that budget can cause stuttering/performance penalties. Because the log does not record `Budget`, it is not possible to quantify the over-budget amount from this run.
+
+Next diagnostic: a bounded 180-second repeat with the same 512 MB override and network isolation, while collecting live Windows physical-memory/commit, CPU utilization, NVIDIA GPU temperature/utilization/memory/power, and pagefile usage. Do not increase the coherent window, delete caches, change the pagefile, or run without a timeout based on this result alone. The 16 GB process-private commit is not the same as its resident working set, and the log has no temperatures.
+
+See [the detailed 120-second diagnostic record](system-changes/2026-11-24-xcl-120s-512mb-run.md). Raw root-level `report.json` and `xcl.log` contain local Windows paths / profile identifiers; do not duplicate unredacted diagnostics in further public notes.
+
 ## Next steps / safe operating rules
 
-1. **The local source has now been updated and verified at upstream `beaa245` (24 November 2026).** The next proposed diagnostic is a controlled 60-second run with `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`; see [the update record](system-changes/2026-11-24-xcl-update-beaa245.md). It has not yet been run.
-2. XCL updates remain manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. The previous one-minute trigger was removed; do not describe the task as automatically updating.
-3. Preserve the current logs/reports for comparison, but keep public copies redacted. The first-run diagnostic and repeated-crash records are under `local-xbox-compatibility/system-changes/`.
-4. The initial run reached a pre-Rockstar-logo screen; neither menu navigation nor gameplay has been verified on this laptop.
-5. If resuming XCL test diagnosis, rerun the full test suite sequentially and compare with the earlier parallel result.
-6. Before installing VIctory, review its build scripts and dependencies and use a completely separate project directory, such as `D:\\Development\\VIctory`.
-7. Do not attempt real-GPU world gameplay with VIctory until the upstream GPU-hang warning and laptop compatibility have been reassessed.
-8. Keep game data and other proprietary assets outside source repositories.
+1. **Latest local retail test: 120 seconds, normal XCL-managed exit, and the coherent window stayed at 512 MB / about 116.75 MB used.** The user saw the Rockstar logo and narration screen. See [the 120-second run record](system-changes/2026-11-24-xcl-120s-512mb-run.md).
+2. The next reasonable test is a bounded 180-second repeat with `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`, while separately monitoring Windows physical memory/commit, pagefile, CPU load and NVIDIA GPU temperature/load/memory. Do not run indefinitely or increase the coherent window until the budget and thermal data are checked.
+3. The local source is verified at upstream `beaa245`; the working tree was clean. XCL updates remain manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. The previous one-minute trigger was removed.
+4. The current run still reports mesh pipelines refused (MS shader container in AS slot) and 126 DirectStorage BCPack failures; gameplay/rendering is not yet verified.
+5. Preserve logs for comparison, but keep public copies redacted. The raw root-level report/log include local Windows profile paths; do not duplicate these unredacted.
+6. Before installing VIctory, review its build scripts and dependencies and use a completely separate project directory, such as `D:\\Development\\VIctory`. Do not attempt real-GPU world gameplay with VIctory until its upstream GPU-hang warning and laptop compatibility have been reassessed.
+7. Keep game data and proprietary assets outside source repositories.
 
 ## Upstream references
 
