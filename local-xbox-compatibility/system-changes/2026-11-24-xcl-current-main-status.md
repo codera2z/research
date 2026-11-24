@@ -33,14 +33,8 @@ The 120-second current-main 512 MB report records all 126 sampled BCPack request
 
 Open pull requests are not included merely because the local checkout is current. In particular, PR [#304](https://github.com/ivall/xcl/pull/304) (DXC mesh output chunk budgeting) and PR [#541](https://github.com/ivall/xcl/pull/541) (console mesh shader carried in the AS subobject and compatible stand-ins) are still open, not in current `main`, and are relevant to the 40 mesh-pipeline refusals in the user's logs. The adaptive 4095 MB `E_OUTOFMEMORY` failure is a separate memory/resource issue; neither PR description claims to fix it. Streamed page mapping, depth-UAV and NVIDIA PSO-performance work must likewise be evaluated by actual merge state.
 
-## Standard next run
+## Result of the planned 120-second adaptive comparison
 
-Use the upstream regression harness without patches:
+The latest uploaded `xcl.log` / `report.json` shows that the adaptive run did not complete the intended 120 seconds: `ID3D12CommandList::Close` returned `E_OUTOFMEMORY` at 30.514 s, and the game exited with `0x80000003` at 31.859 s. No completed `xcl-smoke v1` block or exact local HEAD SHA was included in the upload. See [the full sanitized run report](2026-11-24-xcl-adaptive-4095mb-crash.md).
 
-```powershell
-.\scripts\smoke.ps1 -Game 'D:\Games\GTA 6\game_scarlett_master.exe' -Seconds 120 -Xcl '.\target\release\xcl.exe'
-```
-
-The script sets `XCL_NETWORK=0`, `XCL_RUN_SECONDS=120` and `XCL_ACTIVITY=1`, then prints the exact local source commit and run summary. Do not set `XCL_COHERENT_MB` for this run; leave XCL's adaptive coherent-window selection intact.
-
-This status update does not change the XCL source, executable, title files, settings or caches.
+Do not repeat the 4095 MB launch just to reproduce the failure. This update changes only the research record; it does not change the XCL source, executable, game files, settings or caches.
