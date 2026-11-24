@@ -171,6 +171,12 @@ Latest logs show XCL did perform substantial graphics work before the failure: a
 
 The upstream repository was checked again on 24 November 2026. Its current README still describes the newer retail title as reaching menus but not gameplay due to refused mesh pipelines. The local build is 8 commits behind current upstream; the diff is primarily a DXIL cache-key/build-symbol change and documentation, not a demonstrated fix for this game's mesh or command-list failure. Updating now is not expected to make this title playable.
 
+## XCL — first run versus later memory-window behaviour (24 November 2026)
+
+The first 60-second run and the two later crashes used different coherent-memory window sizes: first run 512 MB (119,552 KB allocated); later runs 4,095 MB (4,094,592 KB allocated, about 3,998.6 MB). XCL's exact local source commit contains adaptive coherent-window sizing: it saves the title's cumulative GPU-visible graphics allocation request in `cache/uma_coherent.txt`, then on the next launch may commit `saved request + 512 MB` up to 4,095 MB when free system commit is at least 17 GiB. The first run can therefore complete on the default 512 MB path while later warm runs take a different, much larger committed-memory path. The exact local cache value still needs a read-only check. See [the detailed first-run / later-run comparison](system-changes/2026-11-24-first-vs-later-memory-windows.md).
+
+This does **not** establish that dedicated VRAM is or is not the root cause. The `uma_mb` / `uma_used_kb` counters are XCL's committed coherent UMA-window accounting, not a direct NVIDIA dedicated-VRAM meter. The later runs were near the committed coherent-window limit when D3D12 command-list `Close` returned `E_OUTOFMEMORY`.
+
 ## VIctory — source review only
 
 Upstream: [Marvisak/VIctory](https://github.com/Marvisak/VIctory)
@@ -210,8 +216,8 @@ Before the first retail-game test, Windows automatic pagefile management was dis
 
 ## Next steps / safe operating rules
 
-1. **Pause retail-game testing on this local build.** Two attempts failed at command-list close with `E_OUTOFMEMORY`; do not extend the timeout or clear the caches to retry.
-2. XCL updates are manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. Check upstream for a relevant memory/D3D12 fix before rebuilding; a new version number alone is not enough.
+1. **Pause retail-game testing on this local build.** Two attempts failed at command-list close with `E_OUTOFMEMORY`; first inspect the adaptive `cache/uma_coherent.txt` hint read-only and compare the local build against current upstream before deciding on another controlled test.
+2. XCL updates are manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. Local build `f4ce27c` was 17 commits behind observed upstream `beaa245`; merged PRs #792, #795, #797 and #798 include UMA address bounds, Wait64/list submission changes, and wave32 barrier fixes. They are relevant candidates but do not claim to fix this exact out-of-memory result.
 3. Preserve the current logs/reports for comparison, but keep public copies redacted. The first-run diagnostic and repeated-crash records are under `local-xbox-compatibility/system-changes/`.
 4. The initial run reached a pre-Rockstar-logo screen; neither menu navigation nor gameplay has been verified on this laptop.
 5. If resuming XCL test diagnosis, rerun the full test suite sequentially and compare with the earlier parallel result.
