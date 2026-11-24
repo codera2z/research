@@ -82,7 +82,7 @@ Observed file size: 6,832,640 bytes.
 
 **Correction to the earlier build record:** the user has confirmed that the local XCL checkout and release executable are now updated to the current upstream `main`, with the changes already merged into upstream included. Do not describe the local build as `beaa245`, eight commits behind, or missing the BCPack/allocator merges. `beaa245` is a historical checkpoint only.
 
-At the time of this update, upstream `main` resolves to [`47efa2ecea0a12934719ae69b81930cf02a4b1c3`](https://github.com/ivall/xcl/commit/47efa2ecea0a12934719ae69b81930cf02a4b1c3). A GitHub comparison showed this main revision is 48 commits ahead of the old `beaa245` checkpoint and has no divergence from it. The user confirms the local checkout has caught up with current main. The local HEAD was not re-read directly in this conversation, so the exact on-disk SHA should be taken from the next official smoke output (or `git rev-parse HEAD`), not inferred from `xcl --version`.
+At the time of this update, upstream `main` resolves to [`47efa2ecea0a12934719ae69b81930cf02a4b1c3`](https://github.com/ivall/xcl/commit/47efa2ecea0a12934719ae69b81930cf02a4b1c3). A GitHub comparison showed this main revision is 48 commits ahead of the old `beaa245` checkpoint and has no divergence from it. The user confirms the local checkout has caught up with current main. The exact local HEAD SHA was not extracted from the uploaded logs; the user has confirmed the checkout is aligned with current upstream `main`. Do not infer the local SHA from `xcl --version`, which only reports `0.1.0`.
 
 The current-main merged work includes, among other changes:
 - PR #905: BCPack BC1/BC3/BC4/BC5/BC6H/BC7 decoding.
@@ -190,7 +190,7 @@ Verified from the generated report and console output:
 
 The user later clarified that the first 60-second run displayed a screen immediately before the Rockstar logo, after shader/pipeline loading. The logo itself, menus and gameplay were not confirmed.
 
-See [the sanitized first-run record](system-changes/2026-11-24-first-retail-run.md). The raw `report.json` uploaded by the user at the repository root includes a local Windows profile path; avoid copying raw identifiers or local paths into further public notes. The user subsequently uploaded `xcl.log`, `xcl.prev.log`, `report.json` and `report.prev.json` to the repository root. Both logs and reports now document two repeated out-of-memory failures; see [the repeated-crash record](system-changes/2026-11-24-repeated-crashes.md). These raw diagnostic files are public and may contain local profile paths or account identifiers; avoid further unredacted uploads.
+See [the sanitized first-run record](system-changes/2026-11-24-first-retail-run.md). The raw root uploads contain local Windows profile paths and stack/thread details. They are separate sessions: `xcl.log` + `report.json` are the current-main adaptive 4095 MB crash; `xcl.prev.log` is the 207-second 512 MB run; `report.prev.json` is stale/incomplete for that 207-second run. The older pair of pre-current-main OOM crashes is recorded separately in [the historical crash note](system-changes/2026-11-24-repeated-crashes.md). Do not copy raw identifiers or paths into public summaries.
 
 ## XCL — repeated startup/rendering failures (24 November 2026)
 
@@ -198,11 +198,7 @@ The two repeated crashes in [the historical failure note](system-changes/2026-11
 
 ## XCL — first run versus later memory-window behaviour (24 November 2026)
 
-The first 60-second run and the two later crashes used different coherent-memory window sizes: first run 512 MB (119,552 KB allocated); later runs 4,095 MB (4,094,592 KB allocated, about 3,998.6 MB). XCL's exact local source commit contains adaptive coherent-window sizing: it saves the title's cumulative GPU-visible graphics allocation request in `cache/uma_coherent.txt`, then on the next launch may commit `saved request + 512 MB` up to 4,095 MB when free system commit is at least 17 GiB. The first run can therefore complete on the default 512 MB path while later warm runs take a different, much larger committed-memory path. The exact local cache value still needs a read-only check. See [the detailed first-run / later-run comparison](system-changes/2026-11-24-first-vs-later-memory-windows.md).
-
-This does **not** establish that dedicated VRAM is or is not the root cause. The `uma_mb` / `uma_used_kb` counters are XCL's committed coherent UMA-window accounting, not a direct NVIDIA dedicated-VRAM meter. The later runs were near the committed coherent-window limit when D3D12 command-list `Close` returned `E_OUTOFMEMORY`.
-
-The user subsequently read XCL's `cache/uma_coherent.txt` value: **4,582.2 MB** cumulative requested graphics allocations. The next-run hint adds 512 MB and clamps the coherent window to 4,095 MB. XCL intentionally holds about 96 MB back for internal/readback allocations, explaining the later `~3,998.6 / 4,095 MB` counter. The saved value is cumulative allocation requests, not peak simultaneous VRAM. See [the confirmed first-vs-later memory comparison](system-changes/2026-11-24-first-vs-later-memory-windows.md).
+The first launch used a 512 MB coherent window; the saved hint later caused adaptive launches to select 4,095 MB. The observed `uma_coherent.txt` value was 4,582.2 MB of cumulative allocation requests (not peak live or physical VRAM), and XCL's deliberate ~96 MB reserve explains the ~3,998.6 MB use counter. The same near-cap 4,095 MB path is present in the latest current-main crash. Full allocator mechanics and the earlier run comparison are kept in [the dedicated memory-window note](system-changes/2026-11-24-first-vs-later-memory-windows.md); the new crash's readings are in [its own note](system-changes/2026-11-24-xcl-adaptive-4095mb-crash.md). Do not equate XCL's UMA counters with NVIDIA dedicated VRAM.
 
 ## VIctory — source review only
 
@@ -242,38 +238,15 @@ VIctory is GPL-3.0-or-later; XCL is GPL-2.0-only. Keep their source trees separa
 Before the first retail-game test, Windows automatic pagefile management was disabled and a fixed 24,576 MB pagefile was configured on C: through the Virtual Memory UI. After restart, the user verified `C:\pagefile.sys` at 24,576 MB and Task Manager reported a 39.7 GB commit limit (6 GB committed immediately after restart; 9 GB after starting Firefox). This increases commit capacity but does not add physical RAM. See [the exact change and rollback instructions](system-changes/2026-11-24-pagefile-xcl-preflight.md).
 
 
-## XCL — 120-second run on current local main with 512 MB override (24 November 2026)
+## Detailed current-main run records
 
-The 120-second report/log uploaded after the local update is from the user's current local XCL build (user-confirmed current upstream main; see source/build status above), not the old `beaa245` checkpoint. Settings: `XCL_NETWORK=0`, `XCL_RUN_SECONDS=120`, `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`.
+The concise comparison table above is the index; detailed counters are kept once in the linked notes rather than repeated in this README.
 
-- Normal XCL timed shutdown: report `crash = null`, exit code 0; 669 PresentX calls over 120.103 seconds (~5.58 total presentations/s).
-- The user saw the Rockstar logo, opening logo/menu sequence and narration flow; gameplay was not reached.
-- 540 translated pipelines; 1,082 DXIL cache hits; no cache misses, new compilations or DXIL failures in this report.
-- 40 console mesh pipelines were still refused because the mesh-shader container appeared in the AS slot.
-- BCPack now succeeded: BC1 6, BC5 100, BC7 20 requests; 126 total, zero decode failures, 10,027,008 output bytes (~9.56 MiB). This corrects the earlier note that listed 126 refused chunks.
-- 23 XAPU/Opus packets decoded with zero errors.
-- Coherent window: 512 MB; XCL reports 119,552 KB used (~116.75 MiB).
-- Process-private commit peaked around 16,008 MB. DXGI local/non-local CurrentUsage peaked around 6,655 / 1,360 MB; these are not direct physical VRAM residency readings.
-- XCL's rolling performance sample was 6.3 FPS over the last 300 frames at ~109.7 seconds. Total frames / total duration was 669 / 120.103 ≈ 5.57 FPS. Keep rolling and whole-run figures separate.
-
-The 512 MB override intentionally bypassed the adaptive coherent-window choice. This result is not a normal-default performance baseline. The updated BCPack implementation removed the prior decompression refusal, but the 40 mesh-pipeline refusals remain a rendering limitation.
-
-See [the sanitized 120-second diagnostic record](system-changes/2026-11-24-xcl-120s-512mb-run.md).
-
-## XCL — 207-second black-screen run (24 November 2026)
-
-The user ran the updated local executable for roughly 207 seconds, with the same 512 MB coherent-window override and network isolation, then manually stopped it after the title reached a black screen following the first-run terms/menu flow.
-
-- The user-observed sequence was Rockstar logo → opening/menu screens → narration/menu flow → terms acceptance → black screen.
-- The log shows continued PresentX activity during the black screen; the process was not simply frozen. It recorded approximately 1,243 presentations over the observed run (~6.0/s overall).
-- The same 40 mesh-pipeline refusals occurred early in the run (about 17.3–21.8 seconds).
-- All 126 sampled BCPack requests decoded successfully (BC1 6, BC5 100, BC7 20; zero decoder failures).
-- NVIDIA telemetry reached about 3,909 MiB of 4,096 MiB reported GPU memory; peak GPU temperature was about 46.6°C. These readings do not establish that the GPU was thermally throttling.
-- Process-private commit rose during a DirectStorage/content-loading burst. DXGI local CurrentUsage and XCL target-page/pool figures are accounting counters, not equivalent to physical dedicated VRAM residency.
-- The user stopped the process manually. The log's `0xC000013A` is consistent with Ctrl+C; the PowerShell variable remained `-1` because the interrupted script did not reach its normal `$LASTEXITCODE` assignment. Do not record `-1` as XCL's actual game exit code.
-- The matching NVIDIA CSV belongs to this 207-second run. The separately uploaded `report.prev.json` contains zero presentations and zero shader activity, so it is stale/incomplete for this session; the log and CSV are the useful sources for this run.
-
-This 207-second 512 MB session did not show the command-list-close `E_OUTOFMEMORY` failure. It does not establish that the game is playable: the black screen and refused mesh pipelines remain. The later adaptive 4095 MB run did reproduce `E_OUTOFMEMORY` on current main; see [the separate adaptive-run report](2026-11-24-xcl-adaptive-4095mb-crash.md). No further launch is recommended merely to repeat either result.
+- [120-second current-main run, forced 512 MB](system-changes/2026-11-24-xcl-120s-512mb-run.md): timed exit 0, ~5.58 presents/s across the session, no gameplay, BCPack success, 40 mesh-pipeline refusals.
+- [207-second current-main run, forced 512 MB](system-changes/2026-11-24-xcl-207s-black-screen-run.md): manually stopped on a black screen; ~6.0 presents/s overall; the timestamp-matched CSV supplies the GPU telemetry.
+- [Current-main adaptive 4095 MB crash](system-changes/2026-11-24-xcl-adaptive-4095mb-crash.md): command-list-close `E_OUTOFMEMORY` at 30.514 s; process exit `0x80000003` at 31.859 s.
+- [Earlier out-of-memory pair](system-changes/2026-11-24-repeated-crashes.md): historical pre-current-main `f4ce27c` only.
+- [Adaptive coherent-window mechanics](system-changes/2026-11-24-first-vs-later-memory-windows.md): cache hint, 17 GiB free-commit guard and 96 MiB reserve.
 
 ## Next steps / safe operating rules
 
