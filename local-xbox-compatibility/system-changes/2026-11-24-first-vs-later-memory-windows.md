@@ -39,7 +39,43 @@ The mechanism is:
 
 Therefore, the first run's 512 MB window can be followed by later launches with a nearly 4 GB coherent window. The 4,095 MB size implies that the saved request is at least roughly 3,583 MB before the 512 MB headroom is added (subject to the allocation-granularity rounding and maximum cap).
 
-The exact value in this user's `uma_coherent.txt` file has **not** yet been read. The report figures strongly fit this mechanism, but the cache file should be inspected read-only before treating the explanation as confirmed for this particular machine.
+The user's actual cache value was read-only inspected on 24 November 2026 and is **4,582.2 MB**. This confirms the cumulative allocation-request hint and the 4,095 MB cap for this machine; it is not a peak simultaneous usage measure.
+
+## User's actual cached value — read on 24 November 2026
+
+The user ran the read-only PowerShell check and obtained:
+
+```text
+CacheFile             C:\Users\Shardul\AppData\Local\XCL\RockstarGamesInc.28872443D20A7\cache\uma_coherent.txt
+SavedTitleRequestMB   4582.2
+ExpectedWindowMB      4095
+```
+
+This confirms that the local XCL cache records a cumulative GPU-visible graphics-allocation request of about **4,582.2 MB**. Important: `kernelx.rs` does `ASKED.fetch_add(size, ...)` and does not decrement this counter on frees. Thus 4,582.2 MB is a cumulative allocation-request sum across the run, **not proof that 4,582.2 MB was simultaneously live or physically resident in VRAM**.
+
+At the next launch, `coherent_hint()` adds 512 MB of runtime headroom: 4,582.2 + 512 = 5,094.2 MB, which exceeds the D3D12/XCL maximum of 4,095 MB, so it clamps to 4,095 MB. The free-commit guard is 17 GiB; the post-pagefile system had a 39.7 GB commit limit and roughly 30.7 GB free after Firefox was started (based on the user's 9 / 39.7 GB reading), so the threshold was likely met.
+
+## Why the reports show 3,998.6 MB used from a 4,095 MB window
+
+In the exact local source, `kernelx.rs` uses:
+
+```rust
+const KEEP: usize = 96 << 20;
+let fits = u.size().saturating_sub(u.used()) >= size + KEEP;
+```
+
+This deliberately leaves about 96 MiB in the coherent window for XCL's own readback / internal allocations (per-draw arguments have a separate pool). The difference between 4,095 MB and the reported 3,998.6 MB used is about 96.4 MB, consistent with that reserve policy.
+
+So the later reports show the title/XCL coherent allocations reaching the designed usage ceiling, **not necessarily an accidental attempt to allocate beyond the entire window**. The reserve is intentional. This does not explain the D3D12 `Close` returning `E_OUTOFMEMORY`; that failure may still involve driver resource allocation, local/non-local GPU budget, the fallback memory path, or another interaction. The reports do not prove that dedicated VRAM is full.
+
+## Revised interpretation of the three runs
+
+- First run: 512 MB coherent window; 119,552 KB (~116.75 MB) actually allocated from that XCL window; no crash within 60 seconds; the user saw a pre-Rockstar-logo startup screen.
+- Later runs: 4,095 MB coherent window; 4,094,592 KB (~3,998.6 MB) used, leaving approximately 96 MB held back by XCL's reserve policy; both fail at D3D12 command-list `Close` with `0x8007000e`.
+- The coherent-window size change is directly explained by the saved cumulative request. This makes the three runs different memory-path experiments.
+- The first run demonstrates that the game can get to an early visible startup screen on this RTX 3050 Ti with a 512 MB coherent window and fallback allocations. It does **not** prove that later menu/rendering workloads will fit, but it also means we should not conclude that the GPU cannot run the game at all.
+- `uma_used_kb` and `sparse_used` are XCL UMA allocator counters, not NVIDIA dedicated VRAM telemetry. Dedicated VRAM usage/budget would need separate GPU telemetry or XCL activity logs.
+- Do not interpret the cache's 4,582.2 MB as peak simultaneous GPU memory demand. It is cumulative requested allocation size.
 
 ## What the counters mean
 
@@ -100,4 +136,4 @@ These changes make a current rebuild potentially worthwhile after reviewing the 
 
 ## Bottom line
 
-The first clean 60-second run is meaningful evidence that the title can start on this laptop under the smaller initial memory path. It does **not** rule out a later GPU/VRAM or WDDM resource-budget problem. The 512 MB → 4,095 MB window change explains why the later attempts reached a very different memory state. Read the adaptive cache hint before choosing whether to test a fallback-memory mode or rebuild current upstream.
+The first clean 60-second run is meaningful evidence that the title can start on this laptop under the smaller initial 512 MB coherent window. The user's cache hint confirms a cumulative 4,582.2 MB graphics-allocation request, which makes XCL clamp the next coherent window to 4,095 MB. The later logs show about 3,998.6 MB allocated and approximately 96 MB deliberately held in reserve. This is not proof that dedicated VRAM is exhausted, nor does it explain the subsequent `E_OUTOFMEMORY` by itself. The exact cache value and 96 MB reserve are documented above.
