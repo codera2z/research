@@ -2,8 +2,8 @@
   "xcl_version": "0.1.0",
   "title": "RockstarGamesInc.28872443D20A7",
   "exe": "D:\\Games\\GTA 6\\game_scarlett_master.exe",
-  "crash": "unhandled exception 0x80000003 in game_scarlett_master.exe+0x72ac rax=0x8007000e rbx=0x22aa0e58300 rcx=0x22a9edd0001 rdx=0x0 rsi=0x7041f6f40 rdi=0x70422cfe8 rbp=0x0 r8=0x22a9ef49380 r9=0x0 r10=0x22a9ef30000 r11=0x246 r12=0x7ffefffee170 r13=0x0 r14=0x0 r15=0x7ffefffb23f0 rsp=0xf1964ff6a0; on the stack: game_scarlett_master.exe+0x2482b37, game_scarlett_master.exe+0x4daa120, game_scarlett_master.exe+0xa9437a8, game_scarlett_master.exe+0x75de660, game_scarlett_master.exe+0x4da9e8b, game_scarlett_master.exe+0x2484808",
-  "exit_code": 2147483651,
+  "crash": null,
+  "exit_code": 0,
   "environment": [
     {
       "level": "ok",
@@ -38,10 +38,11 @@
     "hle:kernelx.dll": 56,
     "hle:minuserx.dll": 2,
     "hle:xaudio2_9.dll": 1,
+    "hle:xcl-netoff.dll": 6,
     "hle:xcrdapi.dll": 1,
     "hle:xg_xs.dll": 2,
     "stub": 1,
-    "system": 770
+    "system": 764
   },
   "stubbed_imports": [
     {
@@ -54,32 +55,38 @@
     {
       "dll": "d3d12_xs.dll",
       "function": "ID3D12CommandAllocator::#9 (not on PC)",
-      "calls": 471,
+      "calls": 759,
       "first_caller": "game_scarlett_master.exe+0x188501"
     },
     {
       "dll": "d3d12_xs.dll",
       "function": "ID3D12GraphicsCommandList10::#126 (not on PC)",
-      "calls": 470,
+      "calls": 758,
       "first_caller": "game_scarlett_master.exe+0x3263e"
     },
     {
       "dll": "d3d12_xs.dll",
       "function": "ID3D12GraphicsCommandList10::#142 (not on PC)",
-      "calls": 470,
+      "calls": 758,
       "first_caller": "game_scarlett_master.exe+0x329e9"
     },
     {
       "dll": "d3d12_xs.dll",
       "function": "ID3D12GraphicsCommandList10::#75 (console extension)",
-      "calls": 470,
+      "calls": 758,
       "first_caller": "game_scarlett_master.exe+0x32820"
     },
     {
       "dll": "d3d12_xs.dll",
       "function": "ID3D12CommandQueue::#31 (newer layout)",
-      "calls": 18,
+      "calls": 46,
       "first_caller": "0x0"
+    },
+    {
+      "dll": "d3d12_xs.dll",
+      "function": "ID3D12GraphicsCommandList10::#131 (not on PC)",
+      "calls": 4,
+      "first_caller": "game_scarlett_master.exe+0x2478bc5"
     },
     {
       "dll": "d3d12_xs.dll",
@@ -92,12 +99,6 @@
       "function": "ID3D12GraphicsCommandList10::#132 (not on PC)",
       "calls": 4,
       "first_caller": "game_scarlett_master.exe+0x2478c99"
-    },
-    {
-      "dll": "d3d12_xs.dll",
-      "function": "ID3D12GraphicsCommandList10::#131 (not on PC)",
-      "calls": 2,
-      "first_caller": "game_scarlett_master.exe+0x2478bc5"
     },
     {
       "dll": "d3d12_xs.dll",
@@ -119,32 +120,32 @@
     },
     {
       "name": "vcruntime140.dll",
-      "base": "0x22aa09d0000",
+      "base": "0x1a403e50000",
       "size": "0x1b000"
     },
     {
       "name": "vcruntime140_1.dll",
-      "base": "0x22aa09f0000",
+      "base": "0x1a403e80000",
       "size": "0xc000"
     },
     {
       "name": "xboxbvhbuilder.dll",
-      "base": "0x22aa7ff0000",
+      "base": "0x1a40caf0000",
       "size": "0xde000"
     },
     {
       "name": "amd_fidelityfx_loader_xbox.dll",
-      "base": "0x22aa0a00000",
+      "base": "0x1a403e90000",
       "size": "0x8000"
     },
     {
       "name": "libhttpclient.gdk.dll",
-      "base": "0x22aa80d0000",
+      "base": "0x1a40cbd0000",
       "size": "0xf4000"
     },
     {
       "name": "bink2scarlett.dll",
-      "base": "0x22aa81d0000",
+      "base": "0x1a40ccd0000",
       "size": "0x44000"
     }
   ],
@@ -154,10 +155,10 @@
     "whiteouts": []
   },
   "shaders": {
-    "unique": 8741,
-    "submitted": 228477,
+    "unique": 8742,
+    "submitted": 228475,
     "by_kind": {
-      "dxbc": 107,
+      "dxbc": 108,
       "xbox-native": 8634
     },
     "unknown_parts": {},
@@ -165,7 +166,7 @@
       "as": 2930,
       "cs": 2742,
       "ps": 112532,
-      "rootsig": 111,
+      "rootsig": 109,
       "vs": 110162
     },
     "rejected_pointers": 0,
@@ -2153,15 +2154,15 @@
     "fallback_pipelines": 0,
     "failed_pipelines": 0,
     "fallback_root_signatures": 0,
-    "presents": 470,
-    "frame_boundaries": 470,
+    "presents": 757,
+    "frame_boundaries": 757,
     "last_frame_dump": null,
-    "uma_mb": 4095,
-    "uma_used_kb": 4094592,
-    "uma_gpu_va": "0x3e0000000",
+    "uma_mb": 512,
+    "uma_used_kb": 119552,
+    "uma_gpu_va": "0x300000000",
     "uma_error": "",
-    "uma_import_check": "ok, 1 window(s), 29501 µs",
-    "translated_pipelines": 228,
+    "uma_import_check": "ok, 1 window(s), 30684 µs",
+    "translated_pipelines": 235,
     "translation_errors": [
       "mesh pipeline with its MS d7c434f73b4b811c in the AS slot – refused",
       "mesh pipeline with its MS 8659e9d5df3e2a9e in the AS slot – refused",
@@ -2176,8 +2177,8 @@
       "mesh pipeline with its MS 0cc369e804d4ceb9 in the AS slot – refused",
       "mesh pipeline with its MS c26dfbed7866f6ea in the AS slot – refused",
       "mesh pipeline with its MS 3393dfd087f8cdf1 in the AS slot – refused",
-      "mesh pipeline with its MS b9f81870f0552c0c in the AS slot – refused",
       "mesh pipeline with its MS bc46bcfef12b8d08 in the AS slot – refused",
+      "mesh pipeline with its MS b9f81870f0552c0c in the AS slot – refused",
       "mesh pipeline with its MS 46c0a00b11312788 in the AS slot – refused",
       "mesh pipeline with its MS 32b93f54af6afb43 in the AS slot – refused",
       "mesh pipeline with its MS cbde63c29f5df78b in the AS slot – refused",
@@ -2192,29 +2193,29 @@
       "mesh pipeline with its MS c1417364145cbf68 in the AS slot – refused",
       "mesh pipeline with its MS 05220b29562bdfbe in the AS slot – refused",
       "mesh pipeline with its MS c1ab6f7d127c5600 in the AS slot – refused",
-      "mesh pipeline with its MS 397ccc5c003d279d in the AS slot – refused",
       "mesh pipeline with its MS 8c274e3123b82f44 in the AS slot – refused",
-      "mesh pipeline with its MS f8b4ec63795b957a in the AS slot – refused",
+      "mesh pipeline with its MS 397ccc5c003d279d in the AS slot – refused",
       "mesh pipeline with its MS c505395fd3869f71 in the AS slot – refused",
+      "mesh pipeline with its MS f8b4ec63795b957a in the AS slot – refused",
       "mesh pipeline with its MS 8880e152e9d88cf5 in the AS slot – refused",
       "mesh pipeline with its MS c107ef58496ad61d in the AS slot – refused",
       "mesh pipeline with its MS fb5ee08e44bf0a18 in the AS slot – refused",
       "mesh pipeline with its MS 29f678c8f3a58712 in the AS slot – refused",
       "mesh pipeline with its MS 3289b87aa7179b62 in the AS slot – refused",
       "mesh pipeline with its MS b7108acb0398d3eb in the AS slot – refused",
-      "mesh pipeline with its MS f78880048a6e4d38 in the AS slot – refused"
+      "mesh pipeline with its MS f8007ffa267ad30e in the AS slot – refused"
     ],
     "background_pipelines": [
-      228,
+      235,
       0,
-      57595
+      57588
     ],
     "dxil_cache": {
-      "hits": 460,
-      "misses": 0,
-      "coalesced_hits": 0,
+      "hits": 434,
+      "misses": 38,
+      "coalesced_hits": 15,
       "deferred_misses": 0,
-      "compilations": 0,
+      "compilations": 23,
       "compilation_failures": 0,
       "compilation_errors": []
     }
@@ -2237,10 +2238,10 @@
     "buffers_silenced": 0,
     "source_voice_errors": 0,
     "dropped_flags": [],
-    "xapu_packets_decoded": 0,
+    "xapu_packets_decoded": 90,
     "xapu_decode_errors": 0,
-    "xapu_frames": 0,
-    "xapu_nonzero_samples": 0
+    "xapu_frames": 84528,
+    "xapu_nonzero_samples": 76455
   },
   "xgameruntime": {
     "apis": {
@@ -2248,6 +2249,7 @@
       "01acd177-91f9-4763-a38e-ccbb55ce32e0/cef4fac0-7676-4a94-a119-4c43f9eb5b74": "XUser: XCL",
       "03f0fe74-fdd9-4e5c-b630-f9339c47acc5/35f07670-706e-4bfb-9476-090798c5ebf3": "XDisplay: missing",
       "073b7dcb-1fcf-4030-94be-e3c9eb623428/073b7dcb-1fcf-4030-94be-e3c9eb623428": "XAsync: XCL (fallback – no system xgameruntime.dll)",
+      "0dd112ac-7c24-448c-b92b-3960fb5bd30c/b09d803c-2414-4a05-82c6-66dfdc9e9a44": "XStore: unavailable (offline)",
       "37e56907-2f10-41e8-b72f-36edb185331a/bf2346b2-39af-4658-b5ea-44713c7e83b3": "XNetworking: XCL",
       "3e241977-6237-41e9-8559-102c2d9983f1/d722b373-8c4d-4692-9e51-d6ad9b37aa7d": "XAccessibility: XCL (fallback – no system xgameruntime.dll)",
       "704c3f58-e629-4cc2-b197-30511b996fe2/1bfff3af-f14a-40a3-8e35-9ada906593f9": "XGameSave: XCL",
@@ -2261,7 +2263,26 @@
     }
   },
   "dstorage": {
-    "bcpack_refused": {}
+    "bcpack_refused": {
+      "BC1": {
+        "requests": 6,
+        "with_zlib": 0,
+        "destination_bytes": 393216,
+        "filled_bytes": 0
+      },
+      "BC5": {
+        "requests": 100,
+        "with_zlib": 0,
+        "destination_bytes": 6553600,
+        "filled_bytes": 0
+      },
+      "BC7": {
+        "requests": 20,
+        "with_zlib": 0,
+        "destination_bytes": 3080192,
+        "filled_bytes": 0
+      }
+    }
   },
   "notes": [
     "D3D12.X methods missing on PC show up in called_stubs as '<Interface>::#slot (not on PC)'.",
