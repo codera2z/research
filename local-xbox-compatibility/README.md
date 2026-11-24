@@ -75,7 +75,7 @@ Observed file size: 6,832,640 bytes.
 - `xcl.exe --help` displayed the expected CLI commands: `run`, `inspect`, `disasm`, `shaders`, and `rpf`.
 - One Rust deprecation warning involving `AtomicU32::fetch_update` appeared; it did not stop the build.
 
-**No retail game was launched.** The successful build does not establish compatibility or playability for any game.
+**A first retail-game test was run on 24 November 2026.** The 60-second XCL probe exited cleanly with code `0`; this is evidence that the title process ran through a timed session, not evidence that the game is playable. See [the recorded first-run diagnostics](system-changes/2026-11-24-first-retail-run.md).
 
 ## XCL — test results and limitations
 
@@ -131,8 +131,8 @@ Alternatively, open Task Scheduler → Task Scheduler Library → right-click **
 ### Verification still outstanding
 
 - The task's action path is recorded, but the script contents have not been re-audited in this session.
-- A manual run and its resulting update/build outcome have not yet been verified.
-- Do not describe XCL as automatically updating. The previous proposed 30-minute polling interval is superseded by this manual-only configuration.
+- A manual updater run and its resulting update/build outcome have not yet been verified.
+- The user removed the one-minute trigger; the task currently has no scheduled triggers. Do not describe XCL as automatically updating.
 - To inspect the task's last result after a manual run:
 
 ```powershell
@@ -140,6 +140,26 @@ Get-ScheduledTaskInfo -TaskName "XCL Auto Update" |
     Format-List LastRunTime, LastTaskResult, NextRunTime, NumberOfMissedRuns
 ```
 
+
+## XCL — first retail-game test (24 November 2026)
+
+The user ran the locally built XCL executable against `D:\Games\GTA 6\game_scarlett_master.exe`, with `XCL_NETWORK=0` and `XCL_RUN_SECONDS=60`.
+
+Verified from the generated report and console output:
+
+- Exit code: `0`; report field `crash` was `null`.
+- XCL's timed stop ended the title after 60 seconds; 336 frame presentations were recorded.
+- Real D3D12 backend: NVIDIA GeForce RTX 3050 Ti Laptop GPU (3962 MiB VRAM).
+- Shader report: 8,741 unique shaders; 228,474 submissions; zero Xbox shader errors.
+- Six translated pipelines were recorded; the run summary listed no fallback or failed pipelines.
+- Multiple mesh pipelines were refused because the mesh shader appeared in the amplification-shader slot. Rendering remains incomplete.
+- One stubbed import was reported: `xmem.dll!XMemIsToolsMemAvailable`.
+- `System32\xgameruntime.dll` was absent; dialogs, text entry, invites and game streaming remain unavailable in XCL's fallback mode.
+- Xbox Live / Rockstar service requests failed with `0x80072EFD` while network isolation was enabled. No successful online authentication was shown.
+
+The visible screen/result during this run has not yet been reported by the user. Do not infer that menus or the game world were visible from frame/pipeline counters alone.
+
+See [the sanitized first-run record](system-changes/2026-11-24-first-retail-run.md). The raw `report.json` uploaded by the user at the repository root includes a local Windows profile path; avoid copying raw identifiers or local paths into further public notes. The root `xcl.log` fetches as empty through the GitHub connector, so the local log remains authoritative.
 
 ## VIctory — source review only
 
@@ -174,14 +194,20 @@ VIctory is GPL-3.0-or-later; XCL is GPL-2.0-only. Keep their source trees separa
 
 **Current status:** VIctory was reviewed only. It has not been cloned, built, configured or run on this laptop.
 
+## Windows pagefile preflight
+
+Before the first retail-game test, Windows automatic pagefile management was disabled and a fixed 24,576 MB pagefile was configured on C: through the Virtual Memory UI. After restart, the user verified `C:\pagefile.sys` at 24,576 MB and Task Manager reported a 39.7 GB commit limit (6 GB committed immediately after restart; 9 GB after starting Firefox). This increases commit capacity but does not add physical RAM. See [the exact change and rollback instructions](system-changes/2026-11-24-pagefile-xcl-preflight.md).
+
 ## Next steps / safe operating rules
 
 1. Keep the established XCL installation intact; no uninstall or rollback was performed.
-2. Do not assume XCL automatic updates are enabled. The intended interval remains 30 minutes, but script/task creation is unverified.
-3. If resuming XCL test diagnosis, rerun the full test suite sequentially and compare with the earlier parallel result.
-4. Before installing VIctory, review its build scripts and dependencies and use a completely separate project directory, such as `D:\Development\VIctory`.
-5. Do not attempt real-GPU world gameplay with VIctory until the upstream GPU-hang warning and laptop compatibility have been reassessed.
-6. Keep game data and other proprietary assets outside source repositories.
+2. XCL updates are manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. The task action remains configured.
+3. Record what was visibly displayed during the first 60-second test before attempting a longer run. Review the local `report.json` and `xcl.log` under `%LOCALAPPDATA%\XCL\RockstarGamesInc.28872443D20A7\logs`.
+4. Do not treat the first run as playable: the report records refused mesh pipelines and unsupported Xbox-specific D3D12 methods. Reassess upstream support before longer tests.
+5. If resuming XCL test diagnosis, rerun the full test suite sequentially and compare with the earlier parallel result.
+6. Before installing VIctory, review its build scripts and dependencies and use a completely separate project directory, such as `D:\Development\VIctory`.
+7. Do not attempt real-GPU world gameplay with VIctory until the upstream GPU-hang warning and laptop compatibility have been reassessed.
+8. Keep game data and other proprietary assets outside source repositories.
 
 ## Upstream references
 
