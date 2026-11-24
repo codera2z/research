@@ -27,13 +27,13 @@ Rockstar logo → opening/menu screens → narration/menu flow → terms and con
 
 From the accompanying NVIDIA telemetry and XCL activity lines:
 
-- NVIDIA GPU memory usage reached approximately 3,909 MiB of 4,096 MiB.
-- GPU temperature peaked around 46.6°C. This does not indicate thermal throttling by itself.
-- DXGI local `CurrentUsage` and XCL's target-page/pool counters rose during content loading. Those are accounting counters and must not be equated with physically resident dedicated VRAM.
-- Process commit rose during a DirectStorage/content-loading burst. The run did not complete a clean shutdown report, so do not treat its partial peak counters as definitive end-of-run measurements.
+- NVIDIA telemetry spans the same 207-second interval (17:10:55–17:14:21): GPU memory reached approximately 3,909 MiB of 4,096 MiB; temperature peaked at 46.6°C; GPU utilization peaked at 100% and averaged about 23.4%. Temperature alone does not indicate thermal throttling.
+- XCL's rolling present samples were 6.5 FPS at 101.715 s (600 total frames), 6.9 FPS at 144.916 s (900 total) and 5.7 FPS at 197.763 s (1,200 total). The log ends with ~1,243 presentations over ~207 s (~6.0/s overall). These values are consistent with the black-screen phase, not a game-world benchmark.
+- Process commit reached about 17,490 MB near 206.5 s. At that point the log reported DXGI local/non-local `CurrentUsage` of 7,743 / 1,362 MB, XCL target pages 4,548 MB (4,608 MB pools), arenas 461 MB, and sparse pools 1,024 MB (982 MB mapped). The coherent-window use was about 116 / 512 MB in a nearby activity line.
+- DXGI and XCL counters come from different accounting layers. Do not equate the local/non-local CurrentUsage, target-page pools or sparse-pool counters with physically resident dedicated VRAM. The run did not complete a clean shutdown report, so its partial values are diagnostic snapshots, not final high-water marks.
 
 ## Interpretation
 
 The latest local build contains the upstream merges, and the old BCPack refusal issue is resolved in these runs. The remaining black screen is consistent with the mesh-pipeline refusals already documented by upstream. The test does not prove hardware incapability or gameplay performance because the game never reached a correctly rendered world scene.
 
-Next comparison: use the upstream `scripts/smoke.ps1` harness at 120 seconds without `XCL_COHERENT_MB`, so the exact local source commit and normal adaptive memory-window choice are logged.
+The later adaptive 4095 MB run is a separate session and crashed at `ID3D12CommandList::Close → E_OUTOFMEMORY` after about 30.5 s; see [the separate adaptive-run note](2026-11-24-xcl-adaptive-4095mb-crash.md). Do not combine that crash's report/memory counters with this 207-second session. The latter's `xcl.prev.log` plus the timestamp-matched CSV support the telemetry above; `report.prev.json` does not.
