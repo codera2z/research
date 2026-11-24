@@ -100,31 +100,46 @@ The Windows file `System32\xgameruntime.dll` was not present during the checks. 
 
 Gaming Services was not installed or changed during this setup.
 
-## XCL — automatic updater status
+## XCL — updater configuration (manual only)
 
-An updater script and Task Scheduler commands were drafted during the setup discussion, but there was **no confirmation** that `D:\Development\XCL\tools\Update-XCL.ps1` was created or that a scheduled task was registered. Treat automatic updating as **not configured / not verified**.
+**Verified 24 November 2026.** The Windows Task Scheduler task is named `XCL Auto Update` and is registered in the root Task Scheduler Library.
 
-Preferred polling interval: **every 30 minutes**.
+The task's configured action is:
 
-The intended updater design was:
+- Program: `powershell.exe`
+- Arguments: `-NoProfile -ExecutionPolicy Bypass -File D:\\Development\\XCL\\tools\\Update-XCL.ps1`
 
-- Fetch updates from the official XCL `main` branch.
-- Skip updates if the working tree has local changes.
-- Do not rebuild while `xcl.exe` is running.
-- Fast-forward only; do not overwrite local edits.
-- Build after updating and preserve the previous working executable for recovery if the new build fails.
-- Log update/build outcomes inside the XCL project folder.
-
-Offline behaviour: without internet, Git cannot fetch new commits. A properly written updater should log the failure and exit without changing the local checkout or executable. It will retry at the next scheduled run after connectivity returns; it does not continue downloading while offline. The machine must be awake for Task Scheduler to run. A 30-minute interval means a connection restored just after a poll may not be checked until the next poll.
-
-Before enabling or relying on an updater, verify the script exists and inspect the scheduled task:
+The user removed the recurring one-minute trigger in Task Scheduler. After that change, this read-only inspection returned no trigger entries:
 
 ```powershell
-Test-Path "D:\Development\XCL\tools\Update-XCL.ps1"
-schtasks.exe /Query /TN "XCL Auto Update" /V /FO LIST
+$t = Get-ScheduledTask -TaskName "XCL Auto Update"
+$t.Triggers | Format-List *
 ```
 
-Do not assume the task exists unless those checks confirm it.
+Therefore the task is now **manual-only**: it has no configured scheduled trigger. The task and its action were left in place; the script was not deleted.
+
+### Run the updater manually
+
+From PowerShell:
+
+```powershell
+Start-ScheduledTask -TaskName "XCL Auto Update"
+```
+
+Alternatively, open Task Scheduler → Task Scheduler Library → right-click **XCL Auto Update** → **Run**.
+
+### Verification still outstanding
+
+- The task's action path is recorded, but the script contents have not been re-audited in this session.
+- A manual run and its resulting update/build outcome have not yet been verified.
+- Do not describe XCL as automatically updating. The previous proposed 30-minute polling interval is superseded by this manual-only configuration.
+- To inspect the task's last result after a manual run:
+
+```powershell
+Get-ScheduledTaskInfo -TaskName "XCL Auto Update" |
+    Format-List LastRunTime, LastTaskResult, NextRunTime, NumberOfMissedRuns
+```
+
 
 ## VIctory — source review only
 
