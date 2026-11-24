@@ -75,6 +75,14 @@ The first successful timed run's report recorded a 512 MB committed UMA window w
 
 The first and subsequent runs are therefore not memory-equivalent. See [the dedicated explanation and read-only cache check](2026-11-24-first-vs-later-memory-windows.md). The actual cache hint has not yet been read on the user's machine.
 
+## Confirmed adaptive UMA cache and deliberate headroom (24 November 2026)
+
+The user's read-only cache query returned `SavedTitleRequestMB = 4582.2` and `ExpectedWindowMB = 4095` at `%LOCALAPPDATA%\XCL\RockstarGamesInc.28872443D20A7\cache\uma_coherent.txt`. The source increments this hint cumulatively via `ASKED.fetch_add(size)`; it is not a peak live allocation / VRAM measurement.
+
+The later report's `4094.6 MB` coherent allocation leaves roughly 96 MB out of the 4,095 MB window. This matches XCL's deliberate `KEEP = 96 << 20` reserve in `kernelx.rs`, retained for XCL internal/readback allocations. Do not call that remaining 96 MB accidental free-space or treat it as evidence of physical VRAM exhaustion. It also does not establish why D3D12 `Close` returns `E_OUTOFMEMORY`.
+
+See [the complete adaptive-memory explanation](2026-11-24-first-vs-later-memory-windows.md).
+
 ## Interpretation and limits
 
 - `0x8007000e` is the HRESULT commonly named `E_OUTOFMEMORY`; the immediate failing operation in both logs is a D3D12 command-list `Close`.
