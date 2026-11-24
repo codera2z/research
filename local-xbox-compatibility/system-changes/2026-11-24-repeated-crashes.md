@@ -1,4 +1,6 @@
-# XCL repeated out-of-memory failures — 24 November 2026
+# XCL repeated out-of-memory failures on the earlier build — 24 November 2026
+
+> **Historical record:** these two crashes were on the older local build at `f4ce27c`, before the user updated to current upstream `main`. The latest current-main adaptive-window crash is documented separately in [the current-main 4095 MB crash note](2026-11-24-xcl-adaptive-4095mb-crash.md). Keep the older pair for chronology only; do not use its build SHA or upstream status as the current local state.
 
 ## Summary
 
@@ -92,18 +94,9 @@ See [the complete adaptive-memory explanation](2026-11-24-first-vs-later-memory-
 - The DXIL cache is functioning in these two attempts (460 hits, no compilation failures). Do not delete shader caches as a speculative fix.
 - The refused mesh pipelines remain a separate known compatibility gap; they prevent correct world/minimap rendering.
 
-## Upstream status check — 24 November 2026
+## Upstream status at the time of the old build
 
-Local base commit: `f4ce27ceb6d1b0576d0c659b713b674778bf1968`.
-
-Upstream `ivall/xcl` main was subsequently observed at `beaa245ca04e212f064efc7cafcdce104bc5c0a2`, 17 commits ahead. Among the merged changes:
-
-- [PR #792](https://github.com/ivall/xcl/pull/792): range-check UMA memory windows and 64-bit address carry/borrow (relevant to memory-window addressing; not a direct capacity increase).
-- [PR #795](https://github.com/ivall/xcl/pull/795) and [PR #797](https://github.com/ivall/xcl/pull/797): Wait64 GPU-fence bridge and mid-list command-list splitting (synchronization / submission changes).
-- [PR #798](https://github.com/ivall/xcl/pull/798): safer split-wave64 barriers for wave32 GPUs (relevant to the RTX 3050 Ti execution path).
-
-The PR reports show tests on RTX 4090 / Linux + Proton for #792/#795/#797, without a native Windows retail regression run. #798 reports Windows GPU tests on an RTX 5080 and a 60-second retail smoke run on an AMD RX 9070 XT; a retail run on NVIDIA wave32 hardware was not reported. These are relevant improvements to consider in a later rebuild, but none claims to fix this user's exact `E_OUTOFMEMORY` failure. The current README/HANDOFF still reports that the retail title reaches menus but not gameplay because minimap mesh pipelines are refused.
-
+This failure pair was collected from local base commit `f4ce27ceb6d1b0576d0c659b713b674778bf1968`. The earlier note compared it with `beaa245`, but that upstream snapshot is no longer current. The user later confirmed local source/build synced to current upstream `main` at the `47efa2e` reference; see [current local source/build status](2026-11-24-xcl-current-main-status.md). This old status comparison is retained only as historical context.
 ## Recommendation
 
 **Pause further game launches on this local build.** Do not try an unbounded run, extend the timeout, or clear the shader cache. Wait for an upstream change explicitly addressing D3D12 memory/window allocation, command-list close failures, and/or the mesh-pipeline stream interpretation. Then update/build deliberately and repeat only a short controlled test.
