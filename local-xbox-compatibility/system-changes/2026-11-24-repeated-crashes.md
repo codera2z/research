@@ -97,9 +97,9 @@ See [the complete adaptive-memory explanation](2026-11-24-first-vs-later-memory-
 ## Upstream status at the time of the old build
 
 This failure pair was collected from local base commit `f4ce27ceb6d1b0576d0c659b713b674778bf1968`. The earlier note compared it with `beaa245`, but that upstream snapshot is no longer current. The user later confirmed local source/build synced to current upstream `main` at the `47efa2e` reference; see [current local source/build status](2026-11-24-xcl-current-main-status.md). This old status comparison is retained only as historical context.
-## Recommendation
+## Historical recommendation at the time of the old build
 
-**Pause further game launches on this local build.** Do not try an unbounded run, extend the timeout, or clear the shader cache. Wait for an upstream change explicitly addressing D3D12 memory/window allocation, command-list close failures, and/or the mesh-pipeline stream interpretation. Then update/build deliberately and repeat only a short controlled test.
+At the time these two failures were recorded, the recommendation was to pause additional launches on the then-current `f4ce27c` build rather than repeat the same crash. That is not a description of the user's current source revision. The latest current-main failure and present recommendation are in [the current adaptive-run note](2026-11-24-xcl-adaptive-4095mb-crash.md).
 
 ## Public diagnostic-file caution
 
