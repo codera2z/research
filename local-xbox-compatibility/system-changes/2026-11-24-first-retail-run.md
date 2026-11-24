@@ -80,7 +80,7 @@ finally {
 - It does not prove stability for a longer session.
 - It does not prove that the game is safe to run indefinitely on this laptop.
 
-The user has not yet described what was visibly shown on screen during the 60-second run. Record that observation before deciding whether to attempt a longer test.
+The user reported that after pipeline-loading output, a screen appeared that they identify as the screen immediately before the Rockstar logo; the exact screen/artwork has not been independently identified. XCL then ended at the configured 60-second limit. This observation means the test progressed to a visible pre-logo startup stage, but does not prove that the Rockstar logo, menus or gameplay were reached.
 
 ## Logs and privacy
 
