@@ -157,9 +157,19 @@ Verified from the generated report and console output:
 - `System32\xgameruntime.dll` was absent; dialogs, text entry, invites and game streaming remain unavailable in XCL's fallback mode.
 - Xbox Live / Rockstar service requests failed with `0x80072EFD` while network isolation was enabled. No successful online authentication was shown.
 
-The visible screen/result during this run has not yet been reported by the user. Do not infer that menus or the game world were visible from frame/pipeline counters alone.
+The user later clarified that the first 60-second run displayed a screen immediately before the Rockstar logo, after shader/pipeline loading. The logo itself, menus and gameplay were not confirmed.
 
-See [the sanitized first-run record](system-changes/2026-11-24-first-retail-run.md). The raw `report.json` uploaded by the user at the repository root includes a local Windows profile path; avoid copying raw identifiers or local paths into further public notes. The root `xcl.log` fetches as empty through the GitHub connector, so the local log remains authoritative.
+See [the sanitized first-run record](system-changes/2026-11-24-first-retail-run.md). The raw `report.json` uploaded by the user at the repository root includes a local Windows profile path; avoid copying raw identifiers or local paths into further public notes. The user subsequently uploaded `xcl.log`, `xcl.prev.log`, `report.json` and `report.prev.json` to the repository root. Both logs and reports now document two repeated out-of-memory failures; see [the repeated-crash record](system-changes/2026-11-24-repeated-crashes.md). These raw diagnostic files are public and may contain local profile paths or account identifiers; avoid further unredacted uploads.
+
+## XCL — repeated startup/rendering failures (24 November 2026)
+
+After the initial 60-second run that displayed a screen just before the Rockstar logo, the user performed two further attempts. Both terminated with the same D3D12 command-list close failure and an unhandled game breakpoint. The detailed evidence is in [the repeated-crash record](system-changes/2026-11-24-repeated-crashes.md).
+
+Latest logs show XCL did perform substantial graphics work before the failure: about 228 translated pipelines, 460 translated-DXIL cache hits, and draw/dispatch activity. The coherent window reached 3,998 of 4,095 MB and the sparse allocation pool reached about 7,445 MB. `ID3D12CommandList::Close` returned `0x8007000e` (`E_OUTOFMEMORY`), followed by a game `0x80000003` breakpoint. The same pattern occurred after approximately 31.5 seconds and 34.9 seconds in the two attempts.
+
+**Do not repeat the test on this build for now.** The 24 GB pagefile increased Windows' commit limit but does not expand XCL's 4 GiB coherent window or fix its D3D12 resource-management limitations. The available reports do not establish whether the allocation failure is caused by a specific XCL memory-window limit, GPU/driver allocation, or another D3D12 resource exhaustion condition. Do not label it conclusively as physical VRAM exhaustion.
+
+The upstream repository was checked again on 24 November 2026. Its current README still describes the newer retail title as reaching menus but not gameplay due to refused mesh pipelines. The local build is 8 commits behind current upstream; the diff is primarily a DXIL cache-key/build-symbol change and documentation, not a demonstrated fix for this game's mesh or command-list failure. Updating now is not expected to make this title playable.
 
 ## VIctory — source review only
 
@@ -200,12 +210,12 @@ Before the first retail-game test, Windows automatic pagefile management was dis
 
 ## Next steps / safe operating rules
 
-1. Keep the established XCL installation intact; no uninstall or rollback was performed.
-2. XCL updates are manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. The task action remains configured.
-3. Record what was visibly displayed during the first 60-second test before attempting a longer run. Review the local `report.json` and `xcl.log` under `%LOCALAPPDATA%\XCL\RockstarGamesInc.28872443D20A7\logs`.
-4. Do not treat the first run as playable: the report records refused mesh pipelines and unsupported Xbox-specific D3D12 methods. Reassess upstream support before longer tests.
+1. **Pause retail-game testing on this local build.** Two attempts failed at command-list close with `E_OUTOFMEMORY`; do not extend the timeout or clear the caches to retry.
+2. XCL updates are manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. Check upstream for a relevant memory/D3D12 fix before rebuilding; a new version number alone is not enough.
+3. Preserve the current logs/reports for comparison, but keep public copies redacted. The first-run diagnostic and repeated-crash records are under `local-xbox-compatibility/system-changes/`.
+4. The initial run reached a pre-Rockstar-logo screen; neither menu navigation nor gameplay has been verified on this laptop.
 5. If resuming XCL test diagnosis, rerun the full test suite sequentially and compare with the earlier parallel result.
-6. Before installing VIctory, review its build scripts and dependencies and use a completely separate project directory, such as `D:\Development\VIctory`.
+6. Before installing VIctory, review its build scripts and dependencies and use a completely separate project directory, such as `D:\\Development\\VIctory`.
 7. Do not attempt real-GPU world gameplay with VIctory until the upstream GPU-hang warning and laptop compatibility have been reassessed.
 8. Keep game data and other proprietary assets outside source repositories.
 
