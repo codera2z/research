@@ -77,6 +77,38 @@ Observed file size: 6,832,640 bytes.
 
 **A first retail-game test was run on 24 November 2026.** The 60-second XCL probe exited cleanly with code `0`; this is evidence that the title process ran through a timed session, not evidence that the game is playable. See [the recorded first-run diagnostics](system-changes/2026-11-24-first-retail-run.md).
 
+
+## XCL — latest upstream update verified locally (24 November 2026)
+
+The user updated the local XCL checkout and release executable. Read-only PowerShell checks verified:
+
+- Source commit: `beaa245ca04e212f064efc7cafcdce104bc5c0a2` (2026-11-24).
+- Subject: merge PR #797, splitting title command lists around a mid-list Wait64 after Write64.
+- Branch/status: `main...origin/main`, with no working-tree changes shown.
+- Executable: `D:\Development\XCL\repository\xcl\target\release\xcl.exe`.
+- Executable size: 6,873,600 bytes; Windows LastWriteTime: `24-Nov-26 11:41:00`.
+- `xcl --version`: `xcl 0.1.0`.
+
+The source checkout is verified at the observed upstream `main` commit and is clean. The new executable size and timestamp are consistent with a refreshed build compared with the earlier 6,832,640-byte executable. However, the generic version string does not encode a Git SHA, so the executable's exact source provenance is not independently embedded in the binary.
+
+### Diagnostic options confirmed in the updated source
+
+- `XCL_COHERENT_MB=512` explicitly overrides the adaptive coherent-window hint for one process. The updated `crates/xcl/src/gpu/uma.rs` parses and clamps this value. It does not require deleting or changing `cache/uma_coherent.txt`.
+- `XCL_ACTIVITY=1` enables periodic activity diagnostics. Upstream notes describe process commit, local/non-local video-memory use, target pages, arenas and sparse pools.
+- `XCL_NETWORK=0` remains required for this title because upstream documents that its crash reporter otherwise attempts to send a minidump to an external server.
+- `XCL_RUN_SECONDS=n` provides XCL-managed title shutdown after draining GPU work and queues; do not forcibly kill the process while GPU work may be outstanding.
+
+Upstream references at the verified commit:
+- [UMA/coherent-window implementation](https://github.com/ivall/xcl/blob/beaa245ca04e212f064efc7cafcdce104bc5c0a2/crates/xcl/src/gpu/uma.rs)
+- [Host activity and timed-shutdown implementation](https://github.com/ivall/xcl/blob/beaa245ca04e212f064efc7cafcdce104bc5c0a2/crates/xcl/src/host.rs)
+- [Upstream merge commit #797](https://github.com/ivall/xcl/commit/beaa245ca04e212f064efc7cafcdce104bc5c0a2)
+
+### Next controlled diagnostic (not yet run)
+
+The next proposed comparison is a 60-second run with `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`. This tests the smaller coherent window seen in the first successful timed run while retaining the saved adaptive cache. It is a diagnostic comparison, not a claim that 512 MB is the correct long-term setting or that the new build fixes the D3D12 allocation failure.
+
+Do not delete the saved cache, change the pagefile, or infer physical VRAM exhaustion from coherent-window counters alone. Record the screen reached, exit code, activity lines and new report/log paths after the controlled test.
+
 ## XCL — test results and limitations
 
 Full test command:
@@ -218,8 +250,8 @@ Before the first retail-game test, Windows automatic pagefile management was dis
 
 ## Next steps / safe operating rules
 
-1. **Pause retail-game testing on this local build.** Two attempts failed at command-list close with `E_OUTOFMEMORY`; first inspect the adaptive `cache/uma_coherent.txt` hint read-only and compare the local build against current upstream before deciding on another controlled test.
-2. XCL updates are manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. Local build `f4ce27c` was 17 commits behind observed upstream `beaa245`; merged PRs #792, #795, #797 and #798 include UMA address bounds, Wait64/list submission changes, and wave32 barrier fixes. They are relevant candidates but do not claim to fix this exact out-of-memory result.
+1. **The local source has now been updated and verified at upstream `beaa245` (24 November 2026).** The next proposed diagnostic is a controlled 60-second run with `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`; see [the update record](system-changes/2026-11-24-xcl-update-beaa245.md). It has not yet been run.
+2. XCL updates remain manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. The previous one-minute trigger was removed; do not describe the task as automatically updating.
 3. Preserve the current logs/reports for comparison, but keep public copies redacted. The first-run diagnostic and repeated-crash records are under `local-xbox-compatibility/system-changes/`.
 4. The initial run reached a pre-Rockstar-logo screen; neither menu navigation nor gameplay has been verified on this laptop.
 5. If resuming XCL test diagnosis, rerun the full test suite sequentially and compare with the earlier parallel result.
