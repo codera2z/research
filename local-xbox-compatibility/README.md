@@ -78,36 +78,28 @@ Observed file size: 6,832,640 bytes.
 **A first retail-game test was run on 24 November 2026.** The 60-second XCL probe exited cleanly with code `0`; this is evidence that the title process ran through a timed session, not evidence that the game is playable. See [the recorded first-run diagnostics](system-changes/2026-11-24-first-retail-run.md).
 
 
-## XCL — latest upstream update verified locally (24 November 2026)
+## XCL — current local source/build status (24 November 2026)
 
-The user updated the local XCL checkout and release executable. Read-only PowerShell checks verified:
+**Correction to the earlier build record:** the user has confirmed that the local XCL checkout and release executable are now updated to the current upstream `main`, with the changes already merged into upstream included. Do not describe the local build as `beaa245`, eight commits behind, or missing the BCPack/allocator merges. `beaa245` is a historical checkpoint only.
 
-- Source commit: `beaa245ca04e212f064efc7cafcdce104bc5c0a2` (2026-11-24).
-- Subject: merge PR #797, splitting title command lists around a mid-list Wait64 after Write64.
-- Branch/status: `main...origin/main`, with no working-tree changes shown.
-- Executable: `D:\Development\XCL\repository\xcl\target\release\xcl.exe`.
-- Executable size: 6,873,600 bytes; Windows LastWriteTime: `24-Nov-26 11:41:00`.
-- `xcl --version`: `xcl 0.1.0`.
+At the time of this update, upstream `main` resolves to [`47efa2ecea0a12934719ae69b81930cf02a4b1c3`](https://github.com/ivall/xcl/commit/47efa2ecea0a12934719ae69b81930cf02a4b1c3). A GitHub comparison showed this main revision is 48 commits ahead of the old `beaa245` checkpoint and has no divergence from it. The user confirms the local checkout has caught up with current main. The local HEAD was not re-read directly in this conversation, so the exact on-disk SHA should be taken from the next official smoke output (or `git rev-parse HEAD`), not inferred from `xcl --version`.
 
-The source checkout is verified at the observed upstream `main` commit and is clean. The new executable size and timestamp are consistent with a refreshed build compared with the earlier 6,832,640-byte executable. However, the generic version string does not encode a Git SHA, so the executable's exact source provenance is not independently embedded in the binary.
+The current-main merged work includes, among other changes:
+- PR #905: BCPack BC1/BC3/BC4/BC5/BC6H/BC7 decoding.
+- PRs #1009, #1012 and #1023: D3D12 allocator reset/release/recording fixes.
+- PR #951: query tiled-resource support before reserving affected depth textures.
+- PR #990: correct GFX10 image format 134.
+- PR #1016: refuse removal of non-empty virtual directories.
 
-### Diagnostic options confirmed in the updated source
+The newer run reports are consistent with the updated code: the 126 BCPack chunks (BC1 6, BC5 100, BC7 20) were decoded successfully rather than refused. However, current `main` still has unresolved graphics/gameplay work; in particular, the observed mesh-pipeline refusals and black screen are not proof that the open mesh/page-mapping fixes have merged.
 
-- `XCL_COHERENT_MB=512` explicitly overrides the adaptive coherent-window hint for one process. The updated `crates/xcl/src/gpu/uma.rs` parses and clamps this value. It does not require deleting or changing `cache/uma_coherent.txt`.
-- `XCL_ACTIVITY=1` enables periodic activity diagnostics. Upstream notes describe process commit, local/non-local video-memory use, target pages, arenas and sparse pools.
-- `XCL_NETWORK=0` remains required for this title because upstream documents that its crash reporter otherwise attempts to send a minidump to an external server.
-- `XCL_RUN_SECONDS=n` provides XCL-managed title shutdown after draining GPU work and queues; do not forcibly kill the process while GPU work may be outstanding.
+The binary's `xcl 0.1.0` version string does not encode a Git SHA. Use the official smoke script below for the next test: its `xcl-smoke` output records the source commit from the local checkout.
 
-Upstream references at the verified commit:
-- [UMA/coherent-window implementation](https://github.com/ivall/xcl/blob/beaa245ca04e212f064efc7cafcdce104bc5c0a2/crates/xcl/src/gpu/uma.rs)
-- [Host activity and timed-shutdown implementation](https://github.com/ivall/xcl/blob/beaa245ca04e212f064efc7cafcdce104bc5c0a2/crates/xcl/src/host.rs)
-- [Upstream merge commit #797](https://github.com/ivall/xcl/commit/beaa245ca04e212f064efc7cafcdce104bc5c0a2)
+### Standard upstream smoke run
 
-### Next controlled diagnostic (not yet run)
+The upstream regression harness is `scripts/smoke.ps1`. It runs the already-built executable with `XCL_NETWORK=0`, `XCL_RUN_SECONDS` set to the requested duration, and `XCL_ACTIVITY=1`; it captures the frame count, final present rates, device removals, crashes and peak process commit. For the next comparison, use it unchanged with `-Seconds 120`. Do not set `XCL_COHERENT_MB`; allow XCL's normal adaptive coherent-window selection. The run command is recorded in the latest 207-second diagnostic note.
 
-The next proposed comparison is a 60-second run with `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`. This tests the smaller coherent window seen in the first successful timed run while retaining the saved adaptive cache. It is a diagnostic comparison, not a claim that 512 MB is the correct long-term setting or that the new build fixes the D3D12 allocation failure.
-
-Do not delete the saved cache, change the pagefile, or infer physical VRAM exhaustion from coherent-window counters alone. Record the screen reached, exit code, activity lines and new report/log paths after the controlled test.
+No source patches, PR cherry-picks, game-file changes, executable modifications or configuration edits are part of this status update.
 
 ## XCL — test results and limitations
 
@@ -201,7 +193,7 @@ Latest logs show XCL did perform substantial graphics work before the failure: a
 
 **Do not repeat the test on this build for now.** The 24 GB pagefile increased Windows' commit limit but does not expand XCL's 4 GiB coherent window or fix its D3D12 resource-management limitations. The available reports do not establish whether the allocation failure is caused by a specific XCL memory-window limit, GPU/driver allocation, or another D3D12 resource exhaustion condition. Do not label it conclusively as physical VRAM exhaustion.
 
-The upstream repository was checked again on 24 November 2026. Its current README still describes the newer retail title as reaching menus but not gameplay due to refused mesh pipelines. The local build is 8 commits behind current upstream; the diff is primarily a DXIL cache-key/build-symbol change and documentation, not a demonstrated fix for this game's mesh or command-list failure. Updating now is not expected to make this title playable.
+This is a historical failure record, not the current local build status. The earlier “8 commits behind” statement is superseded and incorrect for the present checkout: the user has confirmed that local XCL is now updated to current upstream main (47efa2e; full SHA recorded above), including all changes already merged there. The previous OOM attempts occurred on earlier code/settings and must not be used to describe the current build. Subsequent current-main tests are recorded separately.
 
 ## XCL — first run versus later memory-window behaviour (24 November 2026)
 
@@ -249,33 +241,57 @@ VIctory is GPL-3.0-or-later; XCL is GPL-2.0-only. Keep their source trees separa
 Before the first retail-game test, Windows automatic pagefile management was disabled and a fixed 24,576 MB pagefile was configured on C: through the Virtual Memory UI. After restart, the user verified `C:\pagefile.sys` at 24,576 MB and Task Manager reported a 39.7 GB commit limit (6 GB committed immediately after restart; 9 GB after starting Firefox). This increases commit capacity but does not add physical RAM. See [the exact change and rollback instructions](system-changes/2026-11-24-pagefile-xcl-preflight.md).
 
 
-## XCL — 120-second retail-game run with 512 MB coherent window (24 November 2026)
+## XCL — 120-second run on current local main with 512 MB override (24 November 2026)
 
-The user completed a 120-second run on the verified upstream build `beaa245`, using `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`. The log confirms that `XCL_RUN_SECONDS=120` ended the process intentionally. The report records `crash: null` and exit code `0`. The user observed the Rockstar logo and a narration screen before the timer ended.
+The 120-second report/log uploaded after the local update is from the user's current local XCL build (user-confirmed current upstream main; see source/build status above), not the old `beaa245` checkpoint. Settings: `XCL_NETWORK=0`, `XCL_RUN_SECONDS=120`, `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`.
 
-Key results: 757 PresentX calls; 235 translated pipelines; no fallback/failed pipeline counters; no DXIL compilation failures; 40 mesh-pipeline translation refusals (MS container in AS slot); 90 Opus/XAPU packets decoded with zero decoder errors; 126 DirectStorage BCPack requests refused (BC1 6, BC5 100, BC7 20).
+- Normal XCL timed shutdown: report `crash = null`, exit code 0; 669 PresentX calls over 120.103 seconds (~5.58 total presentations/s).
+- The user saw the Rockstar logo, opening logo/menu sequence and narration flow; gameplay was not reached.
+- 540 translated pipelines; 1,082 DXIL cache hits; no cache misses, new compilations or DXIL failures in this report.
+- 40 console mesh pipelines were still refused because the mesh-shader container appeared in the AS slot.
+- BCPack now succeeded: BC1 6, BC5 100, BC7 20 requests; 126 total, zero decode failures, 10,027,008 output bytes (~9.56 MiB). This corrects the earlier note that listed 126 refused chunks.
+- 23 XAPU/Opus packets decoded with zero errors.
+- Coherent window: 512 MB; XCL reports 119,552 KB used (~116.75 MiB).
+- Process-private commit peaked around 16,008 MB. DXGI local/non-local CurrentUsage peaked around 6,655 / 1,360 MB; these are not direct physical VRAM residency readings.
+- XCL's rolling performance sample was 6.3 FPS over the last 300 frames at ~109.7 seconds. Total frames / total duration was 669 / 120.103 ≈ 5.57 FPS. Keep rolling and whole-run figures separate.
 
-The coherent UMA window remained at 512 MB, with `uma_used_kb=119552` (about 116.75 MB). It was not close to full. The activity trace's process-private commit rose to a maximum of about 16,074 MB and then stayed around 16,029–16,074 MB through the final minute. DXGI reported local video-memory `CurrentUsage` peaking around 6,654 MB and non-local around 1,359 MB. XCL's activity log does not record the DXGI budget, CPU load, total system physical-memory availability, GPU temperature, CPU temperature, or clocks, so it cannot by itself establish thermal headroom or exact physical residency.
+The 512 MB override intentionally bypassed the adaptive coherent-window choice. This result is not a normal-default performance baseline. The updated BCPack implementation removed the prior decompression refusal, but the 40 mesh-pipeline refusals remain a rendering limitation.
 
-FPS: XCL logged 600 frames presented and 7.8 FPS over the last 300 at about 97.7 seconds; the total run recorded 757 presentations over 120 seconds (about 6.3 average across startup and loading). The user's observed on-screen rate was approximately 9.5 FPS. Keep these as different measurement windows rather than treating them as contradictory.
+See [the sanitized 120-second diagnostic record](system-changes/2026-11-24-xcl-120s-512mb-run.md).
 
-Interpretation: forcing 512 MB successfully avoided the previous 4,095 MB coherent-window saturation, and the title survived the full timed interval. This is the strongest local progress so far, but not proof of gameplay. The remaining mesh pipeline refusals, DirectStorage BC pack failures, 32-lane wave split on the RTX 3050 Ti, and memory pressure likely contribute to the low frame rate / incomplete rendering.
+## XCL — 207-second black-screen run (24 November 2026)
 
-For the local video-memory numbers, XCL calls `IDXGIAdapter3::QueryVideoMemoryInfo` and logs `CurrentUsage` for local and non-local segments. Microsoft defines this as the application's current video-memory usage; the same structure's `Budget` field gives the OS-provided budget, and exceeding that budget can cause stuttering/performance penalties. Because the log does not record `Budget`, it is not possible to quantify the over-budget amount from this run.
+The user ran the updated local executable for roughly 207 seconds, with the same 512 MB coherent-window override and network isolation, then manually stopped it after the title reached a black screen following the first-run terms/menu flow.
 
-Next diagnostic: a bounded 180-second repeat with the same 512 MB override and network isolation, while collecting live Windows physical-memory/commit, CPU utilization, NVIDIA GPU temperature/utilization/memory/power, and pagefile usage. Do not increase the coherent window, delete caches, change the pagefile, or run without a timeout based on this result alone. The 16 GB process-private commit is not the same as its resident working set, and the log has no temperatures.
+- The user-observed sequence was Rockstar logo → opening/menu screens → narration/menu flow → terms acceptance → black screen.
+- The log shows continued PresentX activity during the black screen; the process was not simply frozen. It recorded approximately 1,243 presentations over the observed run (~6.0/s overall).
+- The same 40 mesh-pipeline refusals occurred early in the run (about 17.3–21.8 seconds).
+- All 126 sampled BCPack requests decoded successfully (BC1 6, BC5 100, BC7 20; zero decoder failures).
+- NVIDIA telemetry reached about 3,909 MiB of 4,096 MiB reported GPU memory; peak GPU temperature was about 46.6°C. These readings do not establish that the GPU was thermally throttling.
+- Process-private commit rose during a DirectStorage/content-loading burst. DXGI local CurrentUsage and XCL target-page/pool figures are accounting counters, not equivalent to physical dedicated VRAM residency.
+- The user stopped the process manually. The log's `0xC000013A` is consistent with Ctrl+C; the PowerShell variable remained `-1` because the interrupted script did not reach its normal `$LASTEXITCODE` assignment. Do not record `-1` as XCL's actual game exit code.
+- The final report was not a normal completed-run report. Do not treat it as a clean XCL shutdown or use its partial counters as a final report.
 
-See [the detailed 120-second diagnostic record](system-changes/2026-11-24-xcl-120s-512mb-run.md). Raw root-level `report.json` and `xcl.log` contain local Windows paths / profile identifiers; do not duplicate unredacted diagnostics in further public notes.
+This run did not show the old D3D12 command-list `E_OUTOFMEMORY` failure. It does not establish that the game is playable: the black screen and refused mesh pipelines remain. The full upstream regression harness, rather than a custom test script, is the next controlled comparison.
+
+### Next test — official 120-second XCL smoke harness
+
+From the XCL repository root, with the already-built release executable:
+
+```powershell
+.\scripts\smoke.ps1 -Game 'D:\Games\GTA 6\game_scarlett_master.exe' -Seconds 120 -Xcl '.\target\release\xcl.exe'
+```
+
+This is the upstream `scripts/smoke.ps1` harness, not a custom patch or a new implementation. It sets network isolation, the requested XCL-managed duration and activity logging, then prints an `xcl-smoke v1` result including commit, adapter, frames, last present rates, removals, crashes and peak commit. Do not force `XCL_COHERENT_MB`; the goal is to observe the normal adaptive choice. If `XCL_COHERENT_MB` is set in the inherited PowerShell environment, clear it for this process before calling the harness and restore its previous value afterwards.
 
 ## Next steps / safe operating rules
 
-1. **Latest local retail test: 120 seconds, normal XCL-managed exit, and the coherent window stayed at 512 MB / about 116.75 MB used.** The user saw the Rockstar logo and narration screen. See [the 120-second run record](system-changes/2026-11-24-xcl-120s-512mb-run.md).
-2. The next reasonable test is a bounded 180-second repeat with `XCL_COHERENT_MB=512`, `XCL_ACTIVITY=1`, and `XCL_NETWORK=0`, while separately monitoring Windows physical memory/commit, pagefile, CPU load and NVIDIA GPU temperature/load/memory. Do not run indefinitely or increase the coherent window until the budget and thermal data are checked.
-3. The local source is verified at upstream `beaa245`; the working tree was clean. XCL updates remain manual-only: use `Start-ScheduledTask -TaskName "XCL Auto Update"` when choosing to update. The previous one-minute trigger was removed.
-4. The current run still reports mesh pipelines refused (MS shader container in AS slot) and 126 DirectStorage BCPack failures; gameplay/rendering is not yet verified.
-5. Preserve logs for comparison, but keep public copies redacted. The raw root-level report/log include local Windows profile paths; do not duplicate these unredacted.
-6. Before installing VIctory, review its build scripts and dependencies and use a completely separate project directory, such as `D:\\Development\\VIctory`. Do not attempt real-GPU world gameplay with VIctory until its upstream GPU-hang warning and laptop compatibility have been reassessed.
-7. Keep game data and proprietary assets outside source repositories.
+1. Run the official 120-second smoke command above, without `XCL_COHERENT_MB`, so the actual adaptive memory-window choice is recorded.
+2. Keep `XCL_NETWORK=0` for this title to prevent the crash reporter from attempting an external minidump upload.
+3. Do not add local patches, cherry-picks, shader-cache deletions, game-file edits, executable modifications or pagefile changes for this comparison.
+4. Compare the next `xcl-smoke` block, the matching `xcl.log` and `report.json`, and the last visible screen. Record the exact source commit printed by the harness.
+5. Keep the current upstream status and open PRs separate: merged fixes are present locally; open work for mesh pipelines, streamed page mappings and depth UAV handling is not part of current main.
+6. Raw root-level diagnostic uploads may contain local paths/profile identifiers; use sanitized summaries in long-term research notes.
 
 ## Upstream references
 
