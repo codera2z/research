@@ -64,6 +64,17 @@ In that first report:
 
 The two later logs show substantially more D3D12 work and reuse 460 cached translations, but now fill the coherent window to approximately 3.9 GiB and fail at command-list close. This difference suggests the later runs advanced much further into the graphics workload; it is not evidence that the first run was more compatible or that deleting the cache would help.
 
+## Adaptive coherent-memory detail from the first-run comparison
+
+The first successful timed run's report recorded a 512 MB committed UMA window with 119,552 KB allocated. Both later failing reports recorded 4,095 MB total and 4,094,592 KB allocated. The exact local source revision `f4ce27c` already contains an adaptive mechanism:
+
+- `kernelx.rs` sums the title's GPU-visible graphics allocations and calls `uma::note_coherent_need`.
+- `uma.rs` saves that sum to `cache/uma_coherent.txt`; next startup may precommit the saved amount plus 512 MB, capped at 4,095 MB (if free commit is at least 17 GiB).
+- Graphics allocations that do not fit in the committed window use a write-watched fallback memory path.
+- The log's `coherent used/total` values come from XCL's own `Uma::used()` and `Uma::size()` accounting. They are not direct physical GPU VRAM usage.
+
+The first and subsequent runs are therefore not memory-equivalent. See [the dedicated explanation and read-only cache check](2026-11-24-first-vs-later-memory-windows.md). The actual cache hint has not yet been read on the user's machine.
+
 ## Interpretation and limits
 
 - `0x8007000e` is the HRESULT commonly named `E_OUTOFMEMORY`; the immediate failing operation in both logs is a D3D12 command-list `Close`.
@@ -77,9 +88,13 @@ The two later logs show substantially more D3D12 work and reuse 460 cached trans
 
 Local base commit: `f4ce27ceb6d1b0576d0c659b713b674778bf1968`.
 
-Upstream `ivall/xcl` main was observed at `e50836bdf6f5c026f281d545ed86fb2f07ba6e6a`, 8 commits ahead. Comparing these commits showed changes in `Cargo.toml`, `README.md`, `SECURITY.md`, `crates/xcl/build.rs`, `crates/xcl/src/gpu/recomp/dxc.rs`, and `crates/xcl/src/gpu/recomp/pso.rs`. The shader change preserves translated DXIL across unrelated rebuilds; no fix for this title's mesh-pipeline issue or this observed command-list-close failure was established by that comparison.
+Upstream `ivall/xcl` main was subsequently observed at `beaa245ca04e212f064efc7cafcdce104bc5c0a2`, 17 commits ahead. Among the merged changes:
 
-The current upstream README still states that the newer retail title reaches menus but not gameplay because minimap mesh pipelines are refused. There is no basis to expect simply pulling the currently observed upstream commits to resolve this specific laptop failure.
+- [PR #792](https://github.com/ivall/xcl/pull/792): range-check UMA memory windows and 64-bit address carry/borrow (relevant to memory-window addressing; not a direct capacity increase).
+- [PR #795](https://github.com/ivall/xcl/pull/795) and [PR #797](https://github.com/ivall/xcl/pull/797): Wait64 GPU-fence bridge and mid-list command-list splitting (synchronization / submission changes).
+- [PR #798](https://github.com/ivall/xcl/pull/798): safer split-wave64 barriers for wave32 GPUs (relevant to the RTX 3050 Ti execution path).
+
+The PR reports show tests on RTX 4090 / Linux + Proton for #792/#795/#797, without a native Windows retail regression run. #798 reports Windows GPU tests on an RTX 5080 and a 60-second retail smoke run on an AMD RX 9070 XT; a retail run on NVIDIA wave32 hardware was not reported. These are relevant improvements to consider in a later rebuild, but none claims to fix this user's exact `E_OUTOFMEMORY` failure. The current README/HANDOFF still reports that the retail title reaches menus but not gameplay because minimap mesh pipelines are refused.
 
 ## Recommendation
 
