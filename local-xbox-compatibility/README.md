@@ -177,6 +177,8 @@ The first 60-second run and the two later crashes used different coherent-memory
 
 This does **not** establish that dedicated VRAM is or is not the root cause. The `uma_mb` / `uma_used_kb` counters are XCL's committed coherent UMA-window accounting, not a direct NVIDIA dedicated-VRAM meter. The later runs were near the committed coherent-window limit when D3D12 command-list `Close` returned `E_OUTOFMEMORY`.
 
+The user subsequently read XCL's `cache/uma_coherent.txt` value: **4,582.2 MB** cumulative requested graphics allocations. The next-run hint adds 512 MB and clamps the coherent window to 4,095 MB. XCL intentionally holds about 96 MB back for internal/readback allocations, explaining the later `~3,998.6 / 4,095 MB` counter. The saved value is cumulative allocation requests, not peak simultaneous VRAM. See [the confirmed first-vs-later memory comparison](system-changes/2026-11-24-first-vs-later-memory-windows.md).
+
 ## VIctory — source review only
 
 Upstream: [Marvisak/VIctory](https://github.com/Marvisak/VIctory)
