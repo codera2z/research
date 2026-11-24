@@ -27,11 +27,11 @@ Among the current-main changes relevant to this machine and the recent title tes
 - #990 — correct GFX10 image format 134.
 - #1016 — reject removal of non-empty virtual directories.
 
-The latest uploaded 120-second report records all 126 sampled BCPack requests as successfully unpacked (BC1 6, BC5 100, BC7 20; zero decoder failures), corroborating that the old “BCPack refused” assessment is obsolete for the current executable.
+The 120-second current-main 512 MB report records all 126 sampled BCPack requests as successfully unpacked (BC1 6, BC5 100, BC7 20; zero decoder failures), corroborating that the old “BCPack refused” assessment is obsolete for the current executable. The subsequent adaptive 4095 MB run is a separate failure: command-list `Close` returned `E_OUTOFMEMORY` at 30.514 s and the game exited with breakpoint `0x80000003` at 31.859 s. See [the sanitized adaptive-run report](2026-11-24-xcl-adaptive-4095mb-crash.md).
 
 ## What is not implied by being up to date
 
-Open pull requests are not included merely because the local checkout is current. The mesh-pipeline translation, streamed page-mapping, depth-UAV and NVIDIA PSO-performance work must be evaluated by their actual merge state. In particular, the 40 mesh-pipeline refusals still present in the latest logs show that the gameplay-rendering blocker has not been eliminated just by updating to current main.
+Open pull requests are not included merely because the local checkout is current. In particular, PR [#304](https://github.com/ivall/xcl/pull/304) (DXC mesh output chunk budgeting) and PR [#541](https://github.com/ivall/xcl/pull/541) (console mesh shader carried in the AS subobject and compatible stand-ins) are still open, not in current `main`, and are relevant to the 40 mesh-pipeline refusals in the user's logs. The adaptive 4095 MB `E_OUTOFMEMORY` failure is a separate memory/resource issue; neither PR description claims to fix it. Streamed page mapping, depth-UAV and NVIDIA PSO-performance work must likewise be evaluated by actual merge state.
 
 ## Standard next run
 
